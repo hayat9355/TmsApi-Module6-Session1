@@ -2288,11 +2288,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\CSUG\\Desktop\\m5\\TmsApi-Module5-Session1\\TmsApi-Module4-Session1.csproj",
+      "projectUniqueName": "C:\\Users\\CSUG\\Downloads\\Telegram Desktop\\m5\\m5\\TmsApi-Module5-Session1\\TmsApi-Module4-Session1.csproj",
       "projectName": "TmsApi-Module4-Session1",
-      "projectPath": "C:\\Users\\CSUG\\Desktop\\m5\\TmsApi-Module5-Session1\\TmsApi-Module4-Session1.csproj",
+      "projectPath": "C:\\Users\\CSUG\\Downloads\\Telegram Desktop\\m5\\m5\\TmsApi-Module5-Session1\\TmsApi-Module4-Session1.csproj",
       "packagesPath": "C:\\Users\\CSUG\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\CSUG\\Desktop\\m5\\TmsApi-Module5-Session1\\obj\\",
+      "outputPath": "C:\\Users\\CSUG\\Downloads\\Telegram Desktop\\m5\\m5\\TmsApi-Module5-Session1\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\CSUG\\AppData\\Roaming\\NuGet\\NuGet.Config"

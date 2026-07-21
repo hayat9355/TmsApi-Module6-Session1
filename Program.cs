@@ -1,8 +1,10 @@
-using Scalar.AspNetCore;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 using TmsApi.Data;
+using Scalar.AspNetCore;
 using TmsApi.Entities;
+using TmsApi.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
@@ -26,8 +28,9 @@ builder.Host.UseDefaultServiceProvider(options =>
 });
 
 //  Session 2: Service registrations 
-builder.Services.AddScoped<EnrollmentWorker>();
+builder.Services.AddSingleton<EnrollmentWorker>();
 builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
+builder.Services.AddScoped<ICourseService, CourseService>();
 
 
 var app = builder.Build();
