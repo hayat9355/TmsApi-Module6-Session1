@@ -3,13 +3,16 @@ using Microsoft.EntityFrameworkCore;
 using TmsApi.Data;
 using Scalar.AspNetCore;
 using TmsApi.Entities;
+using TmsApi.Filters;
 using TmsApi.Services;
+using TmsApi.Persistence;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
-//  Session 1: Authentication 
+
 builder.Services
     .AddAuthentication("Training")
     .AddScheme<AuthenticationSchemeOptions, TrainingAuthHandler>("Training", null);
@@ -20,7 +23,7 @@ options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")
 
 builder.Services.AddAuthorization();
 
-//  Session 2: DI lifetime validation 
+
 builder.Host.UseDefaultServiceProvider(options =>
 {
     options.ValidateScopes = true;
@@ -33,22 +36,31 @@ builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
 builder.Services.AddScoped<ICourseService, CourseService>();
 
 
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add<AuditLogFilter>();
+});
+
 var app = builder.Build();
 
 
 //  Session 1: Logging middleware — must be outermost 
 app.UseMiddleware<RequestLoggingMiddleware>();
 
-//  Session 3: Environment toggle 
-// if (app.Environment.IsDevelopment())
-// {
+
+
+
     app.MapOpenApi();
     app.MapScalarApiReference();
-// }
-// else
-// {
-//     app.UseExceptionHandler();
-// }
+    if (app.Environment.IsDevelopment())
+    {
+        using var scope = app.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<TmsDbContext>();
+        await DataSeeder.SeedAsync(context);
+    }
+
+
+
 
 app.UseStatusCodePages();
 app.UseHttpsRedirection();
@@ -56,7 +68,7 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
-//  Session 3: Wire all controllers
+
 app.MapControllers();
 
 

@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
-using TmsApi.Data;
 using TmsApi.Dtos;
+using TmsApi.Data;
 using TmsApi.Entities;
 
 namespace TmsApi.Services;
@@ -8,15 +8,13 @@ namespace TmsApi.Services;
 public class CourseService(
     TmsDbContext context,
     ILogger<CourseService> logger) : ICourseService
-// ↑ Primary constructor DI — cleaner than a constructor body
-// TmsDbContext → talks to PostgreSQL
-// ILogger → logs important events (creations, errors)
 {
-    public Task<CourseResponseDto?> GetByIdAsync(int id, CancellationToken ct) =>
-        context.Courses
+    public Task<CourseResponseDto?> GetByIdAsync(
+        int id,
+        CancellationToken ct)
+    {
+        return context.Courses
             .AsNoTracking()
-            // ↑ Read-only query — no need to track changes
-            // Saves memory and CPU — EF won't watch this object for changes
             .Where(c => c.Id == id)
             .Select(c => new CourseResponseDto(
                 c.Id,
@@ -24,18 +22,14 @@ public class CourseService(
                 c.Title,
                 c.MaxCapacity,
                 c.Enrollments.Count))
-            // ↑ c.Enrollments.Count → EF translates to SQL COUNT subquery
-            // We never load enrollment objects into memory
-            // SQL: SELECT c.Id, c.Code, c.Title, c.MaxCapacity,
-            //      (SELECT COUNT(*) FROM Enrollments WHERE CourseId = c.Id)
-            //      FROM Courses WHERE c.Id = @id
             .FirstOrDefaultAsync(ct);
-    // ↑ Returns null if not found — ICourseService contract says CourseResponseDto?
+    }
+
 
     public async Task<CourseResponseDto> CreateAsync(
-        CreateCourseRequest request, CancellationToken ct)
+        CreateCourseRequest request,
+        CancellationToken ct)
     {
-        // Map DTO → Entity (only service knows about entities, not controller)
         var course = new Course
         {
             Code = request.Code,
@@ -44,31 +38,74 @@ public class CourseService(
         };
 
         context.Courses.Add(course);
-        // ↑ Tells EF Core: "track this new course, mark it as Added"
-        // No SQL runs yet
 
         await context.SaveChangesAsync(ct);
-        // ↑ NOW the SQL runs:
-        // INSERT INTO "Courses" ("Code", "Title", "MaxCapacity")
-        // VALUES ('CSE-101', 'Web Dev', 30)
-        // PostgreSQL sets the Id automatically (IDENTITY column)
 
         logger.LogInformation(
-            "Created course {CourseId} ({Code})", course.Id, course.Code);
-        // ↑ One log line per write operation — production best practice
-        // Never log on every read — too noisy
+            "Created course {CourseId} ({Code})",
+            course.Id,
+            course.Code);
 
-        // Re-query through GetByIdAsync so response uses the same projection
-        // This guarantees the response DTO is always consistent
         return (await GetByIdAsync(course.Id, ct))!;
-        // ↑ The ! says "I know this won't be null — I just inserted it"
     }
 
     public Task<bool> CodeExistsAsync(string code, CancellationToken ct) =>
-        context.Courses
-            .AsNoTracking()
-            .AnyAsync(c => c.Code == code, ct);
-    // ↑ AnyAsync → SQL: SELECT EXISTS (SELECT 1 FROM "Courses" WHERE "Code" = 'CSE-101' LIMIT 1)
-    // Stops at the FIRST matching row — very fast
-    // Returns true if exists, false if not
+        context.Courses.AsNoTracking().AnyAsync(c => c.Code == code, ct);
+
+
+    public async Task<PagedResponse<CourseResponseDto>> GetCoursesAsync(
+    PagedRequest request,
+    CancellationToken ct)
+    {
+        // 1. Start with a no-tracking query
+        IQueryable<Course> query = context.Courses.AsNoTracking();
+
+        // 2. Apply search if provided
+        if (!string.IsNullOrWhiteSpace(request.Search))
+        {
+            query = query.Where(c =>
+            EF.Functions.ILike(c.Title, $"%{request.Search}%") ||
+           EF.Functions.ILike(c.Code, $"%{request.Search}%"));
+        }
+
+        // 3. Count before paging
+        var totalCount = await query.CountAsync(ct);
+
+        // 4. Apply sorting
+        IQueryable<Course> sortedQuery = request.OrderBy switch
+        {
+            "Code" => request.Descending
+            ? query.OrderByDescending(c => c.Code)
+            : query.OrderBy(c => c.Code),
+
+            "MaxCapacity" => request.Descending
+            ? query.OrderByDescending(c => c.MaxCapacity)
+            : query.OrderBy(c => c.MaxCapacity),
+
+            _ => request.Descending
+           ? query.OrderByDescending(c => c.Title)
+           : query.OrderBy(c => c.Title)
+        };
+
+        // 5. Apply paging and projection
+        var items = await sortedQuery
+        .Skip((request.Page - 1) * request.PageSize)
+        .Take(request.PageSize)
+        .Select(c => new CourseResponseDto(
+            c.Id,
+            c.Code,
+            c.Title,
+            c.MaxCapacity,
+            c.Enrollments.Count))
+        .ToListAsync(ct);
+
+        // 6. Return the paged response
+        return new PagedResponse<CourseResponseDto>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            Page = request.Page,
+            PageSize = request.PageSize
+        };
+    }
 }

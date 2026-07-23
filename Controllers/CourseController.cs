@@ -18,8 +18,17 @@ public class CoursesController(ICourseService courseService) : ControllerBase
         {
             return NotFound();
         }
-
         return Ok(course);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetCourses(
+    [FromQuery] PagedRequest request,
+    CancellationToken ct)
+    {
+        var result = await courseService.GetCoursesAsync(request, ct);
+
+        return Ok(result);
     }
 
     [HttpPost]
@@ -35,7 +44,6 @@ public class CoursesController(ICourseService courseService) : ControllerBase
                 Status = StatusCodes.Status409Conflict
             });
         }
-
         var result = await courseService.CreateAsync(request, ct);
         return CreatedAtAction(nameof(GetCourseById), new { id = result.Id }, result);
     }

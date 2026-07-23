@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("TmsApi-Module4-Session1")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b27b5cdc791dc36a76afdd7568515222482254ab")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1c29974218e458d2d116079fac6e1bdb08ddd18a")]
 [assembly: System.Reflection.AssemblyProductAttribute("TmsApi-Module4-Session1")]
 [assembly: System.Reflection.AssemblyTitleAttribute("TmsApi-Module4-Session1")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
