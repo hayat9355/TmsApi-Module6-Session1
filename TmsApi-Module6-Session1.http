@@ -1,0 +1,6 @@
+@TmsApi_Module4_Session1_HostAddress = http://localhost:5432
+
+GET {{TmsApi_Module4_Session1_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
